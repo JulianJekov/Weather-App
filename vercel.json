@@ -1,0 +1,5 @@
+{
+    "rewrites": [
+        { "source": "/api/getWeather", "destination": "/api/getWeather.js" }
+    ]
+}
