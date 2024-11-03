@@ -8,6 +8,7 @@ const Home = () => {
         const notFoundSection = document.querySelector('.not-found');
         const searchCitySection = document.querySelector('.search-city');
         const weatherInfoSection = document.querySelector('.weather-info');
+        const forecastItemsContainer = document.querySelector('.forecast-items-container');
 
         searchBtn.addEventListener('click', () => {
             if (cityInput.value.trim() !== '') {
@@ -38,12 +39,18 @@ const Home = () => {
             }
 
             const forecastData = await getFetchData('forecast', city);
+            displayCurrentWeather(weatherData);
+            displayForecast(forecastData);
 
+            showDisplaySection(weatherInfoSection);
+        }
+
+        function displayCurrentWeather(weatherData) {
             const {
                 name: country,
                 main: { temp, humidity },
                 weather: [{ id, main }],
-                wind: { speed }
+                wind: { speed },
             } = weatherData;
 
             document.querySelector('.country-txt').textContent = country;
@@ -53,7 +60,39 @@ const Home = () => {
             document.querySelector('.wind-value-txt').textContent = speed + ' M/s';
             document.querySelector('.current-date-txt').textContent = getCurrentDate();
             document.querySelector('.weather-summary-img').src = `/assets/weather/${getWeatherIcon(id)}`;
-            showDisplaySection(weatherInfoSection);
+        }
+
+        function displayForecast(forecastData) {
+            const timeTaken = '12:00:00';
+            const todayDate = new Date().toISOString().split('T')[0];
+            forecastItemsContainer.innerHTML = '';
+
+            forecastData.list.forEach(forecastWeather => {
+                if (forecastWeather.dt_txt.includes(timeTaken) && !forecastWeather.dt_txt.includes(todayDate)) {
+                    updateForecastItems(forecastWeather);
+                }
+            });
+        }
+
+        function updateForecastItems(weatherData) {
+            const {
+                dt_txt: date,
+                weather: [{ id }],
+                main: { temp },
+            } = weatherData;
+
+            const dateTaken = new Date(date);
+            const dateOption = { day: '2-digit', month: 'short' };
+            const dateResult = dateTaken.toLocaleDateString('en-US', dateOption);
+
+            const forecastItem = `
+                <div class="forecast-item">
+                    <h5 class="forecast-item-date regular-txt">${dateResult}</h5>
+                    <img src="/assets/weather/${getWeatherIcon(id)}" class="forecast-item-img">
+                    <h5 class="forecast-item-temp">${Math.round(temp)} °C</h5>
+                </div>
+            `;
+            forecastItemsContainer.insertAdjacentHTML('beforeend', forecastItem);
         }
 
         function getWeatherIcon(id) {
@@ -71,14 +110,15 @@ const Home = () => {
             const options = {
                 weekday: 'short',
                 day: '2-digit',
-                month: 'short'
+                month: 'short',
             };
             return currentDate.toLocaleDateString('en-GB', options);
         }
 
         function showDisplaySection(section) {
-            [weatherInfoSection, searchCitySection, notFoundSection]
-                .forEach(sec => sec.style.display = 'none');
+            [weatherInfoSection, searchCitySection, notFoundSection].forEach(
+                (sec) => (sec.style.display = 'none')
+            );
             section.style.display = 'flex';
         }
     }, []);
